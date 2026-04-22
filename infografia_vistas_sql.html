@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infografía — Vistas y JOINs en SQL</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple-50: #EEEDFE;
+    --purple-200: #AFA9EC;
+    --purple-400: #7F77DD;
+    --purple-600: #534AB7;
+    --purple-800: #3C3489;
+    --purple-900: #26215C;
+    --teal-50: #E1F5EE;
+    --teal-400: #1D9E75;
+    --teal-600: #0F6E56;
+    --amber-50: #FAEEDA;
+    --amber-400: #EF9F27;
+    --blue-50: #E6F1FB;
+    --blue-400: #378ADD;
+    --blue-600: #185FA5;
+    --coral-50: #FAECE7;
+    --coral-400: #D85A30;
+    --red-400: #E24B4A;
+    --green-400: #639922;
+    --gray-100: #D3D1C7;
+    --gray-400: #888780;
+    --gray-600: #5F5E5A;
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --text: #1a1a1a;
+    --text-muted: #5F5E5A;
+    --border: rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* HERO */
+  .hero {
+    background: var(--purple-900);
+    border-radius: 20px;
+    padding: 2.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: rgba(127,119,221,0.2);
+  }
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 40%;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(83,74,183,0.3);
+  }
+  .hero-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    color: var(--purple-200);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 1rem;
+  }
+  .hero h1 {
+    font-size: 36px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: .75rem;
+    position: relative;
+    z-index: 1;
+  }
+  .hero h1 span { color: var(--purple-400); }
+  .hero p {
+    font-size: 15px;
+    color: var(--purple-200);
+    line-height: 1.7;
+    max-width: 560px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+  .meta-item { font-size: 12px; color: var(--purple-200); }
+  .meta-item strong { display: block; color: #fff; font-size: 13px; margin-bottom: 2px; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin-bottom: .75rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+
+  /* CARD */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+  }
+  .card-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    margin-bottom: .85rem;
+  }
+  .card h3 { font-size: 14px; font-weight: 600; margin-bottom: .4rem; }
+  .card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+
+  /* STAT CARDS */
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-num { font-size: 36px; font-weight: 600; line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+  /* SCHEMA */
+  .schema-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .schema-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .table-box { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .table-header {
+    padding: 7px 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .table-fields { padding: 6px 10px; }
+  .table-fields .field {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .table-fields .field:last-child { border: none; }
+  .field.pk { color: var(--teal-400); font-weight: 600; }
+  .field.fk { color: var(--blue-400); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .legend { display: flex; gap: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+
+  /* VIEWS */
+  .view-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    border-left: 4px solid var(--purple-400);
+  }
+  .view-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--purple-400);
+    letter-spacing: .05em;
+    margin-bottom: .4rem;
+  }
+  .view-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--purple-800);
+    margin-bottom: .5rem;
+    word-break: break-all;
+  }
+  .view-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .view-result {
+    margin-top: .6rem;
+    font-size: 11px;
+    background: var(--purple-50);
+    color: var(--purple-800);
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  /* SQL */
+  .sql-wrapper {
+    background: #16162A;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .sql-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 0 1rem;
+  }
+  .sql-tab {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    padding: .6rem 1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .2s;
+  }
+  .sql-tab.active { color: var(--purple-400); border-bottom-color: var(--purple-400); }
+  .sql-content { display: none; padding: 1.25rem 1.5rem; }
+  .sql-content.active { display: block; }
+  .sql-content pre {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    line-height: 1.9;
+    color: #AFA9EC;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .kw { color: #7F77DD; font-weight: 700; }
+  .fn { color: #5DCAA5; }
+  .cm { color: #444466; font-style: italic; }
+  .str { color: #FAC775; }
+  .tbl { color: #F0997B; }
+
+  /* CONCLUSIONS */
+  .conclu-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .conclu-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--purple-600);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .conclu-text { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+  .conclu-text strong { color: var(--text); }
+
+  /* REFS */
+  .ref-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .ref-item {
+    display: flex;
+    gap: 10px;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+  .ref-item:last-child { border: none; padding-bottom: 0; }
+  .ref-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--purple-400);
+    flex-shrink: 0;
+    padding-top: 1px;
+  }
+  .ref-text { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .ref-text a { color: var(--blue-400); text-decoration: none; }
+  .ref-text a:hover { text-decoration: underline; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 1.5rem 0 .5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--gray-400);
+    letter-spacing: .05em;
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 1rem; }
+    .hero h1 { font-size: 26px; }
+    .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .hero-meta { flex-direction: column; gap: .75rem; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">Taller 2.3 · UAC · 2026</div>
+    <h1>Vistas <span>&amp;</span> JOINs<br>en SQL</h1>
+    <p>Implementación de vistas para un sistema de gestión clínica usando Oracle SQL Developer, modelando relaciones entre pacientes, médicos, especialidades, diagnósticos y enfermedades.</p>
+    <div class="hero-meta">
+      <div class="meta-item"><strong>Docente</strong>Hugo Espetia Huamanga</div>
+      <div class="meta-item"><strong>Alumno</strong>Yehan Carlos Surcos Alvarez</div>
+      <div class="meta-item"><strong>Grupo</strong>64 bits</div>
+      <div class="meta-item"><strong>Escuela</strong>Ing. de Sistemas</div>
+    </div>
+  </div>
+
+  <!-- QUÉ ES UNA VISTA -->
+  <div class="section-label">¿Qué es una vista?</div>
+  <div class="grid-2" style="margin-bottom:1.5rem">
+    <div class="card">
+      <div class="card-icon" style="background:var(--purple-50)">📋</div>
+      <h3>Tabla virtual</h3>
+      <p>No almacena datos físicamente en disco. Consulta las tablas base en tiempo real cada vez que es invocada por el sistema.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:var(--teal-50)">🔒</div>
+      <h3>Seguridad y control</h3>
+      <p>Restringe el acceso a columnas o filas específicas, ocultando información confidencial a usuarios sin privilegios.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:var(--blue-50)">🔄</div>
+      <h3>Independencia lógica</h3>
+      <p>Aísla cambios estructurales de las tablas. Si el esquema cambia, la vista se adapta sin romper las aplicaciones.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon" style="background:var(--amber-50)">⚡</div>
+      <h3>Simplificación</h3>
+      <p>Encapsula JOINs y filtros complejos en una estructura simple y reutilizable para cualquier usuario.</p>
+    </div>
+  </div>
+
+  <!-- ESTADÍSTICAS -->
+  <div class="section-label">Datos del sistema</div>
+  <div class="grid-4" style="margin-bottom:1.5rem">
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--purple-600)">2</div>
+      <div class="stat-label">Pacientes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--teal-400)">2</div>
+      <div class="stat-label">Médicos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--blue-400)">4</div>
+      <div class="stat-label">Especialidades</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:var(--amber-400)">3</div>
+      <div class="stat-label">Enfermedades</div>
+    </div>
+  </div>
+
+  <!-- ESQUEMA -->
+  <div class="section-label">Esquema de la base de datos</div>
+  <div class="schema-container">
+    <div class="schema-grid">
+      <div class="table-box">
+        <div class="table-header" style="background:var(--purple-600)">tPaciente</div>
+        <div class="table-fields">
+          <div class="field pk"><span class="dot" style="background:var(--teal-400)"></span>codP (PK)</div>
+          <div class="field">tipoDocP</div>
+          <div class="field">nroDocP</div>
+          <div class="field">paternoP</div>
+          <div class="field">maternoP</div>
+          <div class="field">nombresP</div>
+          <div class="field">generoP</div>
+        </div>
+      </div>
+      <div class="table-box">
+        <div class="table-header" style="background:var(--teal-600)">tMedico</div>
+        <div class="table-fields">
+          <div class="field pk"><span class="dot" style="background:var(--teal-400)"></span>codM (PK)</div>
+          <div class="field">tipoDocM</div>
+          <div class="field">paternoM</div>
+          <div class="field">maternoM</div>
+          <div class="field">nombresM</div>
+          <div class="field">celularM</div>
+          <div class="field">generoM</div>
+        </div>
+      </div>
+      <div class="table-box">
+        <div class="table-header" style="background:var(--blue-600)">tEspecialidad</div>
+        <div class="table-fields">
+          <div class="field pk"><span class="dot" style="background:var(--teal-400)"></span>codEsp (PK)</div>
+          <div class="field">nombreEsp</div>
+          <div class="field">descripcionEsp</div>
+        </div>
+      </div>
+      <div class="table-box">
+        <div class="table-header" style="background:#854F0B">tEnfermedad</div>
+        <div class="table-fields">
+          <div class="field pk"><span class="dot" style="background:var(--teal-400)"></span>codE (PK)</div>
+          <div class="field">nombreE</div>
+          <div class="field">descricionE</div>
+        </div>
+      </div>
+      <div class="table-box">
+        <div class="table-header" style="background:var(--red-400)">tDiagnostico</div>
+        <div class="table-fields">
+          <div class="field pk"><span class="dot" style="background:var(--teal-400)"></span>codD (PK)</div>
+          <div class="field">fechaHoraD</div>
+          <div class="field">descripcionD</div>
+          <div class="field fk"><span class="dot" style="background:var(--blue-400)"></span>codP (FK)</div>
+          <div class="field fk"><span class="dot" style="background:var(--blue-400)"></span>codM (FK)</div>
+        </div>
+      </div>
+      <div class="table-box">
+        <div class="table-header" style="background:var(--gray-600)">Esp.Medico</div>
+        <div class="table-fields">
+          <div class="field pk"><span class="dot" style="background:var(--teal-400)"></span>codEspM (PK)</div>
+          <div class="field fk"><span class="dot" style="background:var(--blue-400)"></span>codEsp (FK)</div>
+          <div class="field fk"><span class="dot" style="background:var(--blue-400)"></span>codM (FK)</div>
+          <div class="field">fechaObtencion</div>
+        </div>
+      </div>
+      <div class="table-box">
+        <div class="table-header" style="background:var(--green-400)">Enf.Diagnostico</div>
+        <div class="table-fields">
+          <div class="field pk"><span class="dot" style="background:var(--teal-400)"></span>CodED (PK)</div>
+          <div class="field fk"><span class="dot" style="background:var(--blue-400)"></span>codE (FK)</div>
+          <div class="field fk"><span class="dot" style="background:var(--blue-400)"></span>codD (FK)</div>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="dot" style="background:var(--teal-400)"></span>PK — Clave primaria</div>
+      <div class="legend-item"><span class="dot" style="background:var(--blue-400)"></span>FK — Clave foránea</div>
+    </div>
+  </div>
+
+  <!-- VISTAS CREADAS -->
+  <div class="section-label">Vistas desarrolladas</div>
+  <div class="grid-auto">
+    <div class="view-card">
+      <div class="view-num">VISTA 4.7</div>
+      <div class="view-name">v_pacienteEnfermedad</div>
+      <div class="view-desc">Relaciona pacientes con sus enfermedades a través de diagnósticos. Encadena 4 JOINs.</div>
+      <div class="view-result">Juan Salas → 2 enfermedades</div>
+    </div>
+    <div class="view-card">
+      <div class="view-num">VISTA 5.1</div>
+      <div class="view-name">v_MedicoEspecialidades</div>
+      <div class="view-desc">Muestra médicos con sus especialidades y fecha de obtención del título.</div>
+      <div class="view-result">Alejandra → 2 esp.</div>
+    </div>
+    <div class="view-card">
+      <div class="view-num">VISTA 5.4</div>
+      <div class="view-name">v_EnfermedadesNoDetectadas</div>
+      <div class="view-desc">Enfermedades registradas que aún no aparecen en ningún diagnóstico.</div>
+      <div class="view-result">Resultado: Artritis</div>
+    </div>
+    <div class="view-card">
+      <div class="view-num">VISTA 5.5</div>
+      <div class="view-name">v_EspecialidadesSinMedico</div>
+      <div class="view-desc">Especialidades sin médicos asignados en la clínica actualmente.</div>
+      <div class="view-result">Resultado: Odontología</div>
+    </div>
+    <div class="view-card">
+      <div class="view-num">VISTA 5.7</div>
+      <div class="view-name">v_PacientesSinEnfermedad</div>
+      <div class="view-desc">Pacientes con diagnósticos no relacionados a ninguna enfermedad.</div>
+      <div class="view-result">Resultado: Elena Pérez</div>
+    </div>
+  </div>
+
+  <!-- SQL INTERACTIVO -->
+  <div class="section-label">Código SQL</div>
+  <div class="sql-wrapper">
+    <div class="sql-tabs">
+      <div class="sql-tab active" onclick="showTab(0)">Vista 4.7</div>
+      <div class="sql-tab" onclick="showTab(1)">Vista 5.1</div>
+      <div class="sql-tab" onclick="showTab(2)">Vista 5.4</div>
+      <div class="sql-tab" onclick="showTab(3)">Vista 5.7</div>
+      <div class="sql-tab" onclick="showTab(4)">Consultas</div>
+    </div>
+    <div class="sql-content active" id="tab0">
+<pre><span class="cm">-- Vista 4.7: Relación paciente ↔ enfermedad</span>
+<span class="kw">CREATE VIEW</span> <span class="tbl">v_pacienteEnfermedad</span> (
+  codigoP, nombresP, paternoP, maternoP,
+  codigoD, nombreD, nombreE
+) <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+  p.codP, p.nombresP, p.paternoP, p.maternoP,
+  d.codD, d.descripcionD, e.nombreE
+<span class="kw">FROM</span> <span class="tbl">tpaciente</span> p
+<span class="kw">JOIN</span> <span class="tbl">tdiagnostico</span> d
+  <span class="kw">ON</span> p.codP = d.codP
+<span class="kw">JOIN</span> <span class="tbl">tenfermedadeneldiagnostico</span> ed
+  <span class="kw">ON</span> d.codD = ed.codD
+<span class="kw">JOIN</span> <span class="tbl">tenfermedad</span> e
+  <span class="kw">ON</span> ed.codE = e.codE;
+
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">v_pacienteEnfermedad</span>;</pre>
+    </div>
+    <div class="sql-content" id="tab1">
+<pre><span class="cm">-- Vista 5.1: Médicos y sus especialidades</span>
+<span class="kw">CREATE VIEW</span> <span class="tbl">v_MedicoEspecialidades</span> <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+  m.codM, m.nombresM, m.paternoM, m.maternoM,
+  e.nombreEsp, em.fechaDeObtencionDeLaEspecialidadEspM
+<span class="kw">FROM</span> <span class="tbl">tMedico</span> m
+<span class="kw">JOIN</span> <span class="tbl">tEspecialidadDelMedico</span> em
+  <span class="kw">ON</span> m.codM = em.codM
+<span class="kw">JOIN</span> <span class="tbl">tEspecialidad</span> e
+  <span class="kw">ON</span> em.codEsp = e.codEsp;
+
+<span class="cm">-- 5.2: Cuántas especialidades tiene cada médico</span>
+<span class="kw">SELECT</span> nombresM, paternoM,
+  <span class="fn">COUNT</span>(*) <span class="kw">AS</span> cantidad_especialidades
+<span class="kw">FROM</span> <span class="tbl">v_MedicoEspecialidades</span>
+<span class="kw">GROUP BY</span> nombresM, paternoM;
+
+<span class="cm">-- 5.3: Solo médicos con 2 o más especialidades</span>
+<span class="kw">SELECT</span> nombresM, paternoM,
+  <span class="fn">COUNT</span>(*) <span class="kw">AS</span> cantidad_especialidades
+<span class="kw">FROM</span> <span class="tbl">v_MedicoEspecialidades</span>
+<span class="kw">GROUP BY</span> nombresM, paternoM
+<span class="kw">HAVING</span> <span class="fn">COUNT</span>(*) >= 2;</pre>
+    </div>
+    <div class="sql-content" id="tab2">
+<pre><span class="cm">-- Vista 5.4: Enfermedades aún no detectadas</span>
+<span class="kw">CREATE VIEW</span> <span class="tbl">v_EnfermedadesNoDetectadas</span> <span class="kw">AS</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">tEnfermedad</span>
+<span class="kw">WHERE</span> codE <span class="kw">NOT IN</span> (
+  <span class="kw">SELECT</span> codE
+  <span class="kw">FROM</span> <span class="tbl">tEnfermedadEnElDiagnostico</span>
+);
+
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">v_EnfermedadesNoDetectadas</span>;
+
+<span class="cm">-- Vista 5.5: Especialidades sin médico asignado</span>
+<span class="kw">CREATE VIEW</span> <span class="tbl">v_EspecialidadesSinMedico</span> <span class="kw">AS</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">tEspecialidad</span>
+<span class="kw">WHERE</span> codEsp <span class="kw">NOT IN</span> (
+  <span class="kw">SELECT</span> codEsp
+  <span class="kw">FROM</span> <span class="tbl">tEspecialidadDelMedico</span>
+);
+
+<span class="cm">-- 5.6: Total de especialidades sin médico</span>
+<span class="kw">SELECT</span> <span class="fn">COUNT</span>(*) <span class="kw">AS</span> total_sin_medico
+<span class="kw">FROM</span> <span class="tbl">v_EspecialidadesSinMedico</span>;</pre>
+    </div>
+    <div class="sql-content" id="tab3">
+<pre><span class="cm">-- Vista 5.7: Pacientes sin enfermedad en diagnóstico</span>
+<span class="kw">CREATE VIEW</span> <span class="tbl">v_PacientesSinEnfermedad</span> <span class="kw">AS</span>
+<span class="kw">SELECT DISTINCT</span>
+  p.nombresP, p.paternoP, p.maternoP
+<span class="kw">FROM</span> <span class="tbl">tPaciente</span> p
+<span class="kw">JOIN</span> <span class="tbl">tDiagnostico</span> d
+  <span class="kw">ON</span> p.codP = d.codP
+<span class="kw">WHERE</span> d.codD <span class="kw">NOT IN</span> (
+  <span class="kw">SELECT</span> codD
+  <span class="kw">FROM</span> <span class="tbl">tEnfermedadEnElDiagnostico</span>
+);
+
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="tbl">v_PacientesSinEnfermedad</span>;
+<span class="cm">-- Resultado: Elena Pérez Rozas</span></pre>
+    </div>
+    <div class="sql-content" id="tab4">
+<pre><span class="cm">-- 4.9: Cantidad de enfermedades por paciente</span>
+<span class="kw">SELECT</span>
+  <span class="fn">COUNT</span>(*) cantidad_de_enfermedades,
+  nombresP, paternoP, maternoP
+<span class="kw">FROM</span> <span class="tbl">v_pacienteenfermedad</span>
+<span class="kw">GROUP BY</span> nombresP, paternoP, maternoP;
+
+<span class="cm">-- 5.2: Especialidades por médico (todas)</span>
+<span class="kw">SELECT</span> nombresM, paternoM,
+  <span class="fn">COUNT</span>(*) <span class="kw">AS</span> cantidad_especialidades
+<span class="kw">FROM</span> <span class="tbl">v_MedicoEspecialidades</span>
+<span class="kw">GROUP BY</span> nombresM, paternoM;
+
+<span class="cm">-- 5.6: Total especialidades sin médico</span>
+<span class="kw">SELECT</span>
+  <span class="fn">COUNT</span>(*) <span class="kw">AS</span> total_especialidades_sin_medico
+<span class="kw">FROM</span> <span class="tbl">v_EspecialidadesSinMedico</span>;</pre>
+    </div>
+  </div>
+
+  <!-- CONCLUSIONES -->
+  <div class="section-label">Conclusiones</div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:1.5rem">
+    <div class="conclu-card">
+      <div class="conclu-num">1</div>
+      <div class="conclu-text">Las <strong>vistas simplifican el acceso</strong> a datos complejos, encapsulando JOINs múltiples en estructuras reutilizables que cualquier usuario puede consultar sin conocer el esquema interno.</div>
+    </div>
+    <div class="conclu-card">
+      <div class="conclu-num">2</div>
+      <div class="conclu-text">El uso de <strong>subconsultas con NOT IN</strong> permite identificar registros huérfanos o sin relación, como enfermedades sin diagnóstico o especialidades sin médico asignado.</div>
+    </div>
+    <div class="conclu-card">
+      <div class="conclu-num">3</div>
+      <div class="conclu-text">La combinación de vistas con <strong>GROUP BY y HAVING</strong> permite análisis estadísticos avanzados sobre datos distribuidos en múltiples tablas relacionales de forma eficiente.</div>
+    </div>
+  </div>
+
+  <!-- REFERENCIAS -->
+  <div class="section-label">Bibliografía</div>
+  <div class="ref-box">
+    <div class="ref-item">
+      <span class="ref-num">[1]</span>
+      <div class="ref-text">Silberschatz, A., Korth, H. F., & Sudarshan, S. (2014). <em>Fundamentos de bases de datos</em> (6.ª ed.). McGraw-Hill Interamericana.</div>
+    </div>
+    <div class="ref-item">
+      <span class="ref-num">[2]</span>
+      <div class="ref-text">Oracle. (2023). <em>Oracle Database SQL Language Reference: CREATE VIEW.</em> <a href="https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/CREATE-VIEW.html" target="_blank">Oracle Help Center</a></div>
+    </div>
+    <div class="ref-item">
+      <span class="ref-num">[3]</span>
+      <div class="ref-text">Microsoft. (2023). <em>Vistas - SQL Server.</em> <a href="https://learn.microsoft.com/es-es/sql/relational-databases/views/views" target="_blank">Microsoft Learn</a></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Universidad Andina del Cusco · Facultad de Ingeniería y Arquitectura · 2026
+  </div>
+
+</div>
+
+<script>
+  function showTab(index) {
+    document.querySelectorAll('.sql-tab').forEach((t, i) => {
+      t.classList.toggle('active', i === index);
+    });
+    document.querySelectorAll('.sql-content').forEach((c, i) => {
+      c.classList.toggle('active', i === index);
+    });
+  }
+</script>
+</body>
+</html>
